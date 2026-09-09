@@ -18,8 +18,10 @@ jobs:
 
       - uses: voidzero-dev/setup-vp@v1.18.0
         with:
-          node-version-file: "worker/.node-version"
+          working-directory: worker
+          node-version-file: ".node-version"
           cache: true
+          run-install: false
 
       - name: Install Dependencies
         run: vp install
