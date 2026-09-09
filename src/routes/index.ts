@@ -53,6 +53,8 @@ Filter the list and return only the titles that match the question.`;
   let matches: string[] = [];
   let parsed: unknown = response;
 
+  console.log("AI response: " + JSON.stringify(response, null, 2));
+
   if (
     typeof response === "object" &&
     response !== null &&
