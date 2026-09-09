@@ -6,6 +6,9 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 ENVIRONMENT = "production"
 
+[ai]
+binding = "AI"
+
 [observability.logs]
 enabled = true
 head_sampling_rate = 1
