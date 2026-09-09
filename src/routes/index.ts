@@ -50,37 +50,68 @@ Filter the list and return only the titles that match the question.`;
     },
   );
 
-  let matches: string[] = [];
-  let parsed: unknown = response;
-
   console.log("AI response: " + JSON.stringify(response, null, 2));
 
-  if (
-    typeof response === "object" &&
-    response !== null &&
-    "response" in response &&
-    typeof (response as { response: unknown }).response === "string"
-  ) {
-    try {
-      parsed = JSON.parse((response as { response: string }).response);
-    } catch {
-      parsed = null;
+  function extractMatches(val: unknown): string[] {
+    if (Array.isArray(val)) {
+      return val.filter((item): item is string => typeof item === "string");
     }
+
+    if (typeof val === "string") {
+      try {
+        const parsedJson = JSON.parse(val);
+        const extracted = extractMatches(parsedJson);
+        if (extracted.length > 0) return extracted;
+      } catch {
+        // Not a JSON string
+      }
+      return [];
+    }
+
+    if (typeof val === "object" && val !== null) {
+      const record = val as Record<string, unknown>;
+
+      for (const key of ["matches", "filtered", "titles", "articles", "news"]) {
+        if (key in record) {
+          const extracted = extractMatches(record[key]);
+          if (extracted.length > 0) return extracted;
+        }
+      }
+
+      if ("response" in record) {
+        const extracted = extractMatches(record.response);
+        if (extracted.length > 0) return extracted;
+      }
+
+      for (const child of Object.values(record)) {
+        const extracted = extractMatches(child);
+        if (extracted.length > 0) return extracted;
+      }
+    }
+
+    return [];
   }
 
-  if (typeof parsed === "object" && parsed !== null) {
-    const candidate =
-      (parsed as { matches?: unknown; filtered?: unknown }).matches ??
-      (parsed as { matches?: unknown; filtered?: unknown }).filtered;
-    if (Array.isArray(candidate)) {
-      matches = candidate.filter((item): item is string => typeof item === "string");
-    }
+  function normalizeTitle(title: string): string {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
-  const matchedSet = new Set(matches.map((title) => title.trim().toLowerCase()));
-  const matchedArticles = NEWS_ARTICLES.filter((article) =>
-    matchedSet.has(article.title.trim().toLowerCase()),
-  );
+  const matches = extractMatches(response);
+  const normalizedMatches = matches.map(normalizeTitle).filter((t) => t.length > 0);
+
+  const matchedArticles = NEWS_ARTICLES.filter((article) => {
+    const articleNorm = normalizeTitle(article.title);
+    return normalizedMatches.some(
+      (matchNorm) =>
+        articleNorm === matchNorm ||
+        (matchNorm.length > 10 && articleNorm.includes(matchNorm)) ||
+        (articleNorm.length > 10 && matchNorm.includes(articleNorm)),
+    );
+  });
 
   return Response.json(matchedArticles);
 });
