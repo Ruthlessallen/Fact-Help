@@ -3,8 +3,8 @@ import debug from "./routes/debug.ts";
 import index from "./routes/index.ts";
 
 const routes = new Map<string, RouteHandler>([
-  ["/", index],
-  ["/debug", debug],
+  ["/api", index],
+  ["/api/debug", debug],
 ]);
 
 export default {
