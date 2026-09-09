@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --var ENVIRONMENT:development",
-    "build": "npm --prefix FRONTEND ci && npm --prefix FRONTEND run build && tsc && wrangler build",
+    "build": "npm --prefix FRONTEND ci && npm --prefix FRONTEND run build && pnpm exec tsc && pnpm exec wrangler build",
     "wrangler:types": "wrangler types src/types/worker.d.ts"
   },
   "devDependencies": {
