@@ -26,13 +26,15 @@ async function sendMessage() {
   await scrollToBottom()
 
   try {
-    const matches = await fetchNews(text)
+    const { answer, matches } = await fetchNews(text)
     emit('results', matches)
     messages.value.push({
       role: 'assistant',
-      text: matches.length
-        ? `He encontrado ${matches.length} ${matches.length === 1 ? 'noticia' : 'noticias'}. Las tienes en el panel.`
-        : 'No he encontrado noticias que coincidan.',
+      text:
+        answer ||
+        (matches.length
+          ? `He encontrado ${matches.length} ${matches.length === 1 ? 'noticia' : 'noticias'}. Las tienes en el panel.`
+          : 'No he encontrado noticias que coincidan.'),
     })
   } catch (error) {
     messages.value.push({

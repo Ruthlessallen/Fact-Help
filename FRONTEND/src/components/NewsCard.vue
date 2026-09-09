@@ -34,7 +34,8 @@ function formatDate(isoDate) {
         <time :datetime="news.publishedAt">{{ formatDate(news.publishedAt) }}</time>
       </div>
       <h2>{{ news.title }}</h2>
-      <p class="summary">{{ news.summary }}</p>
+      <p v-if="news.summary" class="summary">{{ news.summary }}</p>
+      <p v-if="news.story" class="story">{{ news.story }}</p>
       <a
         v-if="news.url"
         class="link-button"
@@ -128,6 +129,15 @@ h2 {
 .summary {
   font-size: 14.5px;
   line-height: 150%;
+  color: var(--text);
+}
+
+.story {
+  align-self: flex-start;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
   color: var(--text);
 }
 

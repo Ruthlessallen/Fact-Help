@@ -7,6 +7,11 @@ import { mockNews } from './data/mockNews.js'
 
 const DAY = 86400000
 
+function timeOf(item) {
+  const time = new Date(item.publishedAt).getTime()
+  return Number.isNaN(time) ? 0 : time
+}
+
 function boundsFor(items) {
   const timestamps = items
     .map((item) => new Date(item.publishedAt).getTime())
@@ -44,7 +49,8 @@ const filteredNews = computed(() => {
     const matchesKeyword =
       !kw ||
       item.title?.toLowerCase().includes(kw) ||
-      item.summary?.toLowerCase().includes(kw)
+      item.summary?.toLowerCase().includes(kw) ||
+      item.story?.toLowerCase().includes(kw)
     const matchesLocation = !loc || item.location?.toLowerCase().includes(loc)
     const matchesDate =
       Number.isNaN(publishedAt) ||
@@ -53,8 +59,11 @@ const filteredNews = computed(() => {
     return matchesKeyword && matchesLocation && matchesDate
   })
 
+  result = [...result].sort((a, b) => timeOf(b) - timeOf(a))
+
+  // sort es estable: al reagrupar por tipo de medio se mantiene el orden por fecha
   if (localOnly.value) {
-    result = [...result].sort((a, b) => {
+    result.sort((a, b) => {
       if (a.sourceType === b.sourceType) return 0
       return a.sourceType === 'local' ? -1 : 1
     })
@@ -83,6 +92,24 @@ const filteredNews = computed(() => {
 
     <div class="layout">
       <main class="news-list">
+        <p class="results-count">
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9h4" />
+            <path d="M10 6h8M10 10h8M10 14h5" />
+          </svg>
+          <strong>{{ filteredNews.length }}</strong>
+          {{ filteredNews.length === 1 ? 'noticia' : 'noticias' }}
+        </p>
+
         <p v-if="filteredNews.length === 0" class="empty">
           No hay noticias que coincidan con los filtros seleccionados.
         </p>
@@ -143,6 +170,19 @@ h1 {
   gap: 16px;
   position: sticky;
   top: 20px;
+}
+
+.results-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.results-count strong {
+  color: var(--text-h);
+  font-weight: 600;
 }
 
 .empty {

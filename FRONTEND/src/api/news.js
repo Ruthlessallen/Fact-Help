@@ -22,5 +22,5 @@ export async function fetchNews(question) {
     throw new Error(data.error ?? `el worker respondió ${response.status}.`)
   }
 
-  return data.matches ?? []
+  return { answer: data.answer ?? '', matches: data.matches ?? [] }
 }
