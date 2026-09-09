@@ -30,7 +30,7 @@ ${question}
 Filter the list and return only the news that match the question.`;
 
   const response = await env.AI.run(
-    "workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
     {
       prompt,
       response_format: {
