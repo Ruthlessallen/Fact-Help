@@ -17,7 +17,6 @@ export default {
       return new Response("Not Found", { status: 404 });
     }
 
-
     try {
       return await handler({
         request,
