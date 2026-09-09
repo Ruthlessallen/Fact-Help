@@ -1,33 +1,23 @@
+import { NEWS_ARTICLES } from "../data/news.ts";
 import { defineRoute } from "../lib/route.ts";
 
-const NEWS = [
-  "Local bakery claims croissant can predict the weather",
-  "City council debates ban on silent humming in elevators",
-  "Scientists discover coffee cups hold more gossip than caffeine",
-  "Mayor announces free parking for left-handed drivers only",
-  "Rare pigeon spotted wearing tiny business suit downtown",
-  "Study finds 73% of socks disappear into an alternate dimension",
-  "New app promises to translate cat meows into mild complaints",
-  "Bridge renamed after viral sandwich that stopped traffic",
-];
 const handler = defineRoute(async ({ env, url }) => {
   const question = url.searchParams.get("question")?.trim();
   if (!question) {
-    return Response.json(
-      { error: "The 'question' query parameter is required." },
-      { status: 400 },
-    );
+    return Response.json({ error: "The 'question' query parameter is required." }, { status: 400 });
   }
+
+  const titles = NEWS_ARTICLES.map((article) => article.title);
 
   const prompt = `You are a helpful filtering assistant.
 
-Given the following list of news articles:
-${JSON.stringify(NEWS, null, 2)}
+Given the following list of news article titles:
+${JSON.stringify(titles, null, 2)}
 
-Question:
+Return the ones that are related with the following topic:
 ${question}
 
-Filter the list and return only the news that match the question.`;
+Filter the list and return only the titles that match the question.`;
 
   const response = await env.AI.run(
     "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
@@ -45,8 +35,7 @@ Filter the list and return only the news that match the question.`;
                 items: {
                   type: "string",
                 },
-                description:
-                  "The news articles from the input list that match the question",
+                description: "The news article titles from the input list that match the question",
               },
             },
             required: ["matches"],
@@ -61,7 +50,9 @@ Filter the list and return only the news that match the question.`;
     },
   );
 
-  let result: Record<string, unknown>;
+  let matches: string[] = [];
+  let parsed: unknown = response;
+
   if (
     typeof response === "object" &&
     response !== null &&
@@ -69,32 +60,27 @@ Filter the list and return only the news that match the question.`;
     typeof (response as { response: unknown }).response === "string"
   ) {
     try {
-      const parsed = JSON.parse((response as { response: string }).response);
-      if (typeof parsed === "object" && parsed !== null) {
-        result = {
-          ...response,
-          ...parsed,
-          parsed,
-        };
-      } else {
-        result = { ...response };
-      }
+      parsed = JSON.parse((response as { response: string }).response);
     } catch {
-      result = { ...response };
+      parsed = null;
     }
-  } else if (typeof response === "object" && response !== null) {
-    result = { ...response };
-  } else {
-    result = { response };
   }
 
-  if (Array.isArray(result.matches) && !result.filtered) {
-    result.filtered = result.matches;
-  } else if (Array.isArray(result.filtered) && !result.matches) {
-    result.matches = result.filtered;
+  if (typeof parsed === "object" && parsed !== null) {
+    const candidate =
+      (parsed as { matches?: unknown; filtered?: unknown }).matches ??
+      (parsed as { matches?: unknown; filtered?: unknown }).filtered;
+    if (Array.isArray(candidate)) {
+      matches = candidate.filter((item): item is string => typeof item === "string");
+    }
   }
 
-  return Response.json(result);
+  const matchedSet = new Set(matches.map((title) => title.trim().toLowerCase()));
+  const matchedArticles = NEWS_ARTICLES.filter((article) =>
+    matchedSet.has(article.title.trim().toLowerCase()),
+  );
+
+  return Response.json(matchedArticles);
 });
 
 export default Object.assign(handler, {
